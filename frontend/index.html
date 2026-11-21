@@ -1,0 +1,1243 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApproveIt | Payment Dashboard</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: #f4f6fa;
+            color: #263247;
+        }
+
+        header {
+            background: #183b70;
+            color: white;
+            padding: 20px 35px;
+        }
+
+        header h2 {
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1150px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .panel, .stat {
+            background: white;
+            padding: 22px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px #0000000c;
+        }
+
+        /* Dashboard summary cards */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin: 22px 0;
+        }
+
+        .stat {
+            border-left: 4px solid #2458a6;
+        }
+
+        .stat p {
+            color: #68758a;
+            margin-top: 0;
+        }
+
+        .stat h2 {
+            color: #183b70;
+            font-size: 28px;
+            margin-bottom: 0;
+        }
+
+        .stat.pending-stat {
+            border-left-color: #e69525;
+        }
+
+        .stat.approved-stat {
+            border-left-color: #198754;
+        }
+
+        .stat.released-stat {
+            border-left-color: #168b9c;
+        }
+
+        .panel {
+            margin-bottom: 22px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0 16px;
+            border: 1px solid #d5dce8;
+            border-radius: 6px;
+        }
+
+        button {
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            background: #2458a6;
+            color: white;
+            cursor: pointer;
+            margin: 3px;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .green {
+            background: #198754;
+        }
+
+        .red {
+            background: #dc3545;
+        }
+
+        .orange {
+            background: #e69525;
+        }
+
+        .grey {
+            background: #68758a;
+        }
+
+        /* Current user and role indicator */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .user-badge {
+            display: inline-block;
+            background: #eaf1fc;
+            color: #183b70;
+            padding: 7px 13px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .role-badge {
+            display: inline-block;
+            background: #e8f5ed;
+            color: #198754;
+            padding: 7px 13px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 750px;
+        }
+
+        th, td {
+            padding: 14px;
+            text-align: left;
+            border-bottom: 1px solid #edf0f5;
+        }
+
+        th {
+            background: #edf2fa;
+        }
+
+        /* Colored payment status badges */
+        .status {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 6px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        .status-draft {
+            background: #edf0f5;
+            color: #596579;
+        }
+
+        .status-submitted {
+            background: #fff1d6;
+            color: #9a6200;
+        }
+
+        .status-approved {
+            background: #dff4e7;
+            color: #167344;
+        }
+
+        .status-rejected {
+            background: #fde5e7;
+            color: #b42332;
+        }
+
+        .status-released {
+            background: #dff3f5;
+            color: #087987;
+        }
+
+        .status-unknown {
+            background: #edf0f5;
+            color: #596579;
+        }
+
+        /* Improved success and error feedback */
+        #message {
+            display: none;
+            margin: 15px 0;
+            padding: 12px 15px;
+            border-radius: 7px;
+            font-weight: bold;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        #message.success {
+            display: block;
+            color: #176b3a;
+            background: #e5f5eb;
+            border: 1px solid #b9e4c8;
+        }
+
+        #message.error {
+            display: block;
+            color: #b42332;
+            background: #fdebec;
+            border: 1px solid #f4c3c7;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            padding: 25px;
+            border-radius: 10px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            color: #183b70;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .help-text {
+            color: #68758a;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+
+        @media(max-width: 850px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media(max-width: 650px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            header {
+                padding: 18px;
+            }
+
+            .container {
+                margin: 20px auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h2>ApproveIt</h2>
+    <p>Maker - Checker Payment Approval System</p>
+</header>
+
+<div class="container">
+
+    <div class="top">
+        <div>
+            <h2>Payment Dashboard</h2>
+
+            <div class="user-info">
+                <span class="user-badge" id="currentUserDisplay">
+                    User: M2
+                </span>
+
+                <span class="role-badge" id="currentRoleDisplay">
+                    Role: Maker
+                </span>
+            </div>
+        </div>
+
+        <div>
+            <label><b>Select User:</b></label>
+
+            <select id="userId" onchange="handleUserChange()">
+                <option value="M1">M1 - Maker</option>
+                <option value="M2" selected>M2 - Maker</option>
+                <option value="M3">M3 - Maker</option>
+                <option value="MC1">MC1 - Maker / Checker</option>
+                <option value="MC2">MC2 - Maker / Checker</option>
+                <option value="C1">C1 - Checker</option>
+                <option value="C2">C2 - Checker</option>
+                <option value="C3">C3 - Checker</option>
+                <option value="A1">A1 - Admin</option>
+                <option value="A2">A2 - Admin</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Dashboard Summary Cards -->
+
+    <div class="stats">
+
+        <div class="stat">
+            <p>Total Payments</p>
+            <h2 id="total">0</h2>
+        </div>
+
+        <div class="stat pending-stat">
+            <p>Pending Approvals</p>
+            <h2 id="pending">0</h2>
+        </div>
+
+        <div class="stat approved-stat">
+            <p>Approved Payments</p>
+            <h2 id="approved">0</h2>
+        </div>
+
+        <div class="stat released-stat">
+            <p>Released Payments</p>
+            <h2 id="released">0</h2>
+        </div>
+
+    </div>
+
+    <!-- Create Payment -->
+
+    <div class="panel" id="createPaymentPanel">
+
+        <h3>Create New Payment</h3>
+
+        <form id="paymentForm">
+
+            <label>Beneficiary Name</label>
+            <input id="beneficiary"
+                   required
+                   placeholder="Enter beneficiary name">
+
+            <label>Beneficiary ID</label>
+            <input id="beneficiaryId"
+                   required
+                   placeholder="Enter beneficiary ID">
+
+            <label>Amount (₹)</label>
+            <input id="amount"
+                   type="number"
+                   min="0.01"
+                   step="0.01"
+                   required
+                   placeholder="Enter amount">
+
+            <label>Purpose</label>
+            <input id="purpose"
+                   required
+                   placeholder="Enter payment purpose">
+
+            <button type="submit">Create Payment</button>
+
+        </form>
+
+    </div>
+
+    <!-- Payment Records -->
+
+    <div class="panel">
+
+        <div class="top">
+            <h3>Payment Records</h3>
+            <button onclick="loadPayments()">Refresh</button>
+        </div>
+
+        <div id="message" role="alert" aria-live="polite"></div>
+
+        <div class="table-wrap">
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Payment ID</th>
+                        <th>Created By</th>
+                        <th>Beneficiary</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody id="paymentTable">
+                    <tr>
+                        <td colspan="6">Loading payments...</td>
+                    </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Edit Payment Modal -->
+
+<div id="editModal" class="modal">
+
+    <div class="modal-content">
+
+        <h3>Edit Payment</h3>
+
+        <p class="help-text">
+            Update the payment details and save your changes.
+        </p>
+
+        <form id="editPaymentForm">
+
+            <label>Beneficiary Name</label>
+            <input id="editBeneficiary" required>
+
+            <label>Beneficiary ID</label>
+            <input id="editBeneficiaryId" required>
+
+            <label>Amount (₹)</label>
+            <input id="editAmount"
+                   type="number"
+                   min="0.01"
+                   step="0.01"
+                   required>
+
+            <label>Purpose</label>
+            <input id="editPurpose" required>
+
+            <div class="modal-buttons">
+
+                <button type="button"
+                        class="grey"
+                        onclick="closeEditModal()">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                        class="green"
+                        id="saveEditButton">
+                    Save Changes
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+
+    const API = "";
+
+    let editingPaymentId = null;
+    let editingPayment = null;
+    let loadingRequestId = 0;
+
+    // Role definitions
+    const MAKERS = ["M1", "M2", "M3"];
+    const MAKER_CHECKERS = ["MC1", "MC2"];
+    const CHECKERS = ["C1", "C2", "C3", "MC1", "MC2"];
+    const ADMINS = ["A1", "A2"];
+
+    function currentUser() {
+        return document.getElementById("userId").value;
+    }
+
+    function isMaker(userId) {
+        return MAKERS.includes(userId) ||
+               MAKER_CHECKERS.includes(userId);
+    }
+
+    function isChecker(userId) {
+        return CHECKERS.includes(userId);
+    }
+
+    function isAdmin(userId) {
+        return ADMINS.includes(userId);
+    }
+
+    // Get the role of the selected user
+    function getUserRole(userId) {
+
+        if (MAKER_CHECKERS.includes(userId)) {
+            return "Maker / Checker";
+        }
+
+        if (MAKERS.includes(userId)) {
+            return "Maker";
+        }
+
+        if (CHECKERS.includes(userId)) {
+            return "Checker";
+        }
+
+        if (ADMINS.includes(userId)) {
+            return "Admin";
+        }
+
+        return "Unknown";
+    }
+
+    // Update current user and role display
+    function updateUserInfo() {
+
+        const userId = currentUser();
+
+        document.getElementById("currentUserDisplay")
+            .textContent = "User: " + userId;
+
+        document.getElementById("currentRoleDisplay")
+            .textContent = "Role: " + getUserRole(userId);
+    }
+
+    // Improved success and error messages
+    function showMessage(message, error = false) {
+
+        const box = document.getElementById("message");
+
+        box.textContent = message;
+
+        box.className = "";
+
+        if (!message) {
+            return;
+        }
+
+        box.classList.add(error ? "error" : "success");
+    }
+
+    // Handle user selection changes
+    function handleUserChange() {
+
+        closeEditModal();
+
+        showMessage("");
+
+        updateUserInfo();
+
+        loadPayments();
+    }
+
+    // Show creation form only to Maker roles
+    function updateCreatePaymentVisibility() {
+
+        const createPanel =
+            document.getElementById("createPaymentPanel");
+
+        createPanel.style.display =
+            isMaker(currentUser()) ? "block" : "none";
+    }
+
+    // API request
+    async function apiRequest(path, method = "GET", body = null) {
+
+        const userId = currentUser();
+
+        const options = {
+            method: method,
+            headers: {
+                "X-User-Id": userId
+            }
+        };
+
+        if (body !== null) {
+
+            options.headers["Content-Type"] = "application/json";
+
+            options.body = JSON.stringify(body);
+        }
+
+        const response = await fetch(API + path, options);
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.detail ||
+                data.message ||
+                "Request failed"
+            );
+        }
+
+        return data;
+    }
+
+    // Create payment
+    document.getElementById("paymentForm")
+        .addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+        if (!isMaker(currentUser())) {
+
+            showMessage(
+                "Only Makers can create payments.",
+                true
+            );
+
+            return;
+        }
+
+        const payment = {
+
+            beneficiary_name:
+                document.getElementById("beneficiary")
+                    .value.trim(),
+
+            beneficiary_id:
+                document.getElementById("beneficiaryId")
+                    .value.trim(),
+
+            amount:
+                Number(document.getElementById("amount").value),
+
+            purpose:
+                document.getElementById("purpose")
+                    .value.trim()
+        };
+
+        const submitButton =
+            this.querySelector('button[type="submit"]');
+
+        try {
+
+            submitButton.disabled = true;
+            submitButton.textContent = "Creating...";
+
+            await apiRequest("/payments", "POST", payment);
+
+            showMessage("Payment created successfully!");
+
+            this.reset();
+
+            await loadPayments();
+
+        } catch (error) {
+
+            showMessage(error.message, true);
+
+        } finally {
+
+            submitButton.disabled = false;
+            submitButton.textContent = "Create Payment";
+        }
+
+    });
+
+    // Create action button
+    function createActionButton(label, className, callback) {
+
+        const button = document.createElement("button");
+
+        button.textContent = label;
+        button.className = className || "";
+
+        button.addEventListener("click", callback);
+
+        return button;
+    }
+
+    // Payment action
+    async function paymentAction(id, action, button = null) {
+
+        const userId = currentUser();
+
+        if (
+            action === "submit" &&
+            !isMaker(userId)
+        ) {
+
+            showMessage(
+                "Only Makers can submit payments.",
+                true
+            );
+
+            return;
+        }
+
+        if (
+            (action === "approve" || action === "reject") &&
+            !isChecker(userId)
+        ) {
+
+            showMessage(
+                "Only Checkers can approve or reject payments.",
+                true
+            );
+
+            return;
+        }
+
+        if (
+            action === "release" &&
+            !isAdmin(userId)
+        ) {
+
+            showMessage(
+                "Only Admins can release payments.",
+                true
+            );
+
+            return;
+        }
+
+        let body = null;
+
+        if (action === "reject") {
+
+            const reason = prompt("Enter rejection reason:");
+
+            if (!reason || !reason.trim()) {
+                return;
+            }
+
+            body = {
+                reason: reason.trim()
+            };
+        }
+
+        try {
+
+            if (button) {
+                button.disabled = true;
+            }
+
+            await apiRequest(
+                `/payments/${encodeURIComponent(id)}/${action}`,
+                "POST",
+                body
+            );
+
+            showMessage(
+                "Payment " + action + " successful!"
+            );
+
+            await loadPayments();
+
+        } catch (error) {
+
+            showMessage(error.message, true);
+
+        } finally {
+
+            if (button) {
+                button.disabled = false;
+            }
+        }
+
+    }
+
+    // Open edit modal
+    function openEditModal(payment) {
+
+        if (
+            !isMaker(currentUser()) ||
+            payment.maker_id !== currentUser()
+        ) {
+
+            showMessage(
+                "You can only edit your own payments.",
+                true
+            );
+
+            return;
+        }
+
+        const status = payment.status || payment.state;
+
+        if (
+            status !== "DRAFT" &&
+            status !== "SUBMITTED"
+        ) {
+
+            showMessage(
+                "Only DRAFT or SUBMITTED payments can be edited.",
+                true
+            );
+
+            return;
+        }
+
+        editingPaymentId =
+            payment.id ?? payment.payment_id;
+
+        editingPayment = payment;
+
+        document.getElementById("editBeneficiary").value =
+            payment.beneficiary_name || "";
+
+        document.getElementById("editBeneficiaryId").value =
+            payment.beneficiary_id || "";
+
+        document.getElementById("editAmount").value =
+            payment.amount ?? "";
+
+        document.getElementById("editPurpose").value =
+            payment.purpose || "";
+
+        document.getElementById("editModal").style.display =
+            "flex";
+    }
+
+    // Close edit modal
+    function closeEditModal() {
+
+        document.getElementById("editModal").style.display =
+            "none";
+
+        document.getElementById("editPaymentForm").reset();
+
+        editingPaymentId = null;
+        editingPayment = null;
+    }
+
+    // Save edited payment
+    document.getElementById("editPaymentForm")
+        .addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+        if (editingPaymentId === null || !editingPayment) {
+
+            showMessage(
+                "No payment selected for editing.",
+                true
+            );
+
+            return;
+        }
+
+        if (!isMaker(currentUser())) {
+
+            showMessage(
+                "Only Makers can edit payments.",
+                true
+            );
+
+            return;
+        }
+
+        if (editingPayment.maker_id !== currentUser()) {
+
+            showMessage(
+                "You can only edit your own payments.",
+                true
+            );
+
+            closeEditModal();
+
+            return;
+        }
+
+        const status =
+            editingPayment.status || editingPayment.state;
+
+        if (
+            status !== "DRAFT" &&
+            status !== "SUBMITTED"
+        ) {
+
+            showMessage(
+                "Only DRAFT or SUBMITTED payments can be edited.",
+                true
+            );
+
+            closeEditModal();
+
+            return;
+        }
+
+        const updatedPayment = {
+
+            beneficiary_name:
+                document.getElementById("editBeneficiary")
+                    .value.trim(),
+
+            beneficiary_id:
+                document.getElementById("editBeneficiaryId")
+                    .value.trim(),
+
+            amount:
+                Number(document.getElementById("editAmount").value),
+
+            purpose:
+                document.getElementById("editPurpose")
+                    .value.trim()
+        };
+
+        const saveButton =
+            document.getElementById("saveEditButton");
+
+        try {
+
+            saveButton.disabled = true;
+            saveButton.textContent = "Saving...";
+
+            await apiRequest(
+                `/payments/${encodeURIComponent(editingPaymentId)}`,
+                "PUT",
+                updatedPayment
+            );
+
+            closeEditModal();
+
+            showMessage("Payment updated successfully!");
+
+            await loadPayments();
+
+        } catch (error) {
+
+            showMessage(error.message, true);
+
+        } finally {
+
+            saveButton.disabled = false;
+            saveButton.textContent = "Save Changes";
+        }
+
+    });
+
+    // Get status badge class
+    function getStatusClass(status) {
+
+        const statusClasses = {
+            "DRAFT": "status-draft",
+            "SUBMITTED": "status-submitted",
+            "APPROVED": "status-approved",
+            "REJECTED": "status-rejected",
+            "RELEASED": "status-released"
+        };
+
+        return statusClasses[status] || "status-unknown";
+    }
+
+    // Update dashboard summary cards
+    function updateDashboardStats(payments) {
+
+        document.getElementById("total").textContent =
+            payments.length;
+
+        document.getElementById("pending").textContent =
+            payments.filter(p =>
+                (p.status || p.state) === "SUBMITTED"
+            ).length;
+
+        document.getElementById("approved").textContent =
+            payments.filter(p =>
+                (p.status || p.state) === "APPROVED"
+            ).length;
+
+        document.getElementById("released").textContent =
+            payments.filter(p =>
+                (p.status || p.state) === "RELEASED"
+            ).length;
+    }
+
+    // Load payment records
+    async function loadPayments() {
+
+        updateCreatePaymentVisibility();
+        updateUserInfo();
+
+        const requestId = ++loadingRequestId;
+
+        const table =
+            document.getElementById("paymentTable");
+
+        table.innerHTML =
+            '<tr><td colspan="6">Loading...</td></tr>';
+
+        try {
+
+            const result = await apiRequest("/payments");
+
+            // Ignore outdated responses
+            if (requestId !== loadingRequestId) {
+                return;
+            }
+
+            const payments = Array.isArray(result)
+                ? result
+                : (result.items || result.payments || []);
+
+            // Update all dashboard cards
+            updateDashboardStats(payments);
+
+            table.innerHTML = "";
+
+            if (payments.length === 0) {
+
+                table.innerHTML =
+                    '<tr><td colspan="6">No payments found</td></tr>';
+
+                return;
+            }
+
+            payments.forEach(payment => {
+
+                const id =
+                    payment.id ?? payment.payment_id;
+
+                const status =
+                    payment.status || payment.state || "";
+
+                const beneficiary =
+                    payment.beneficiary_name || "";
+
+                const amount =
+                    payment.amount ?? "";
+
+                // Creator information from backend
+                const createdBy =
+                    payment.maker_id || "Unknown";
+
+                const row = document.createElement("tr");
+
+                // Payment ID
+                const idCell = document.createElement("td");
+                idCell.textContent = id ?? "";
+                row.appendChild(idCell);
+
+                // Created By
+                const creatorCell = document.createElement("td");
+                creatorCell.textContent = createdBy;
+                row.appendChild(creatorCell);
+
+                // Beneficiary
+                const beneficiaryCell = document.createElement("td");
+                beneficiaryCell.textContent = beneficiary;
+                row.appendChild(beneficiaryCell);
+
+                // Amount
+                const amountCell = document.createElement("td");
+                amountCell.textContent = "₹" + amount;
+                row.appendChild(amountCell);
+
+                // Colored Status Badge
+                const statusCell = document.createElement("td");
+
+                const statusBadge = document.createElement("span");
+
+                statusBadge.className =
+                    "status " + getStatusClass(status);
+
+                statusBadge.textContent = status || "UNKNOWN";
+
+                statusCell.appendChild(statusBadge);
+                row.appendChild(statusCell);
+
+                const actionCell =
+                    document.createElement("td");
+
+                // Ownership check
+                const isPaymentMaker =
+                    payment.maker_id === currentUser();
+
+                // EDIT
+                if (
+                    isMaker(currentUser()) &&
+                    isPaymentMaker &&
+                    (status === "DRAFT" || status === "SUBMITTED")
+                ) {
+
+                    actionCell.appendChild(
+                        createActionButton(
+                            "Edit",
+                            "orange",
+                            () => openEditModal(payment)
+                        )
+                    );
+                }
+
+                // SUBMIT
+                if (
+                    isMaker(currentUser()) &&
+                    isPaymentMaker &&
+                    status === "DRAFT"
+                ) {
+
+                    actionCell.appendChild(
+                        createActionButton(
+                            "Submit",
+                            "",
+                            (event) => paymentAction(
+                                id,
+                                "submit",
+                                event.currentTarget
+                            )
+                        )
+                    );
+                }
+
+                // APPROVE / REJECT
+                if (
+                    isChecker(currentUser()) &&
+                    !isPaymentMaker &&
+                    status === "SUBMITTED"
+                ) {
+
+                    actionCell.appendChild(
+                        createActionButton(
+                            "Approve",
+                            "green",
+                            (event) => paymentAction(
+                                id,
+                                "approve",
+                                event.currentTarget
+                            )
+                        )
+                    );
+
+                    actionCell.appendChild(
+                        createActionButton(
+                            "Reject",
+                            "red",
+                            (event) => paymentAction(
+                                id,
+                                "reject",
+                                event.currentTarget
+                            )
+                        )
+                    );
+                }
+
+                // RELEASE
+                if (
+                    isAdmin(currentUser()) &&
+                    status === "APPROVED"
+                ) {
+
+                    actionCell.appendChild(
+                        createActionButton(
+                            "Release",
+                            "green",
+                            (event) => paymentAction(
+                                id,
+                                "release",
+                                event.currentTarget
+                            )
+                        )
+                    );
+                }
+
+                // No available action
+                if (actionCell.children.length === 0) {
+                    actionCell.textContent = "-";
+                }
+
+                row.appendChild(actionCell);
+
+                table.appendChild(row);
+
+            });
+
+        } catch (error) {
+
+            if (requestId !== loadingRequestId) {
+                return;
+            }
+
+            table.innerHTML =
+                '<tr><td colspan="6">Could not load payments</td></tr>';
+
+            showMessage(error.message, true);
+        }
+
+    }
+
+    // Close modal when clicking outside
+    document.getElementById("editModal")
+        .addEventListener("click", function(event) {
+
+        if (event.target === this) {
+            closeEditModal();
+        }
+
+    });
+
+    // Initial load
+    updateUserInfo();
+    loadPayments();
+
+</script>
+
+</body>
+</html>
